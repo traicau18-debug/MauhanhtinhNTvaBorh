@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô phỏng mô hình nguyên tử Helium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+    <div class="flex flex-col min-h-screen p-4 md:p-8">
+        <header class="max-w-4xl mx-auto w-full mb-8 text-center">
+            <h1 class="text-3xl font-bold text-blue-900 mb-2">Mô phỏng mô hình nguyên tử Helium</h1>
+            <p class="text-slate-600 italic">So sánh giữa mô hình hành tinh (Bohr) và mô hình hiện đại</p>
+            <p class="text-slate-600 italic">Thiết kế: Nguyễn Mạnh Hưng</p>
+        </header>
+
+        <main class="max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- Model A: Modern -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-blue-100 flex flex-col">
+                <div class="bg-blue-600 p-4 text-white flex justify-between items-center">
+                    <h2 class="font-bold">Hình (a)</h2>
+                    <span class="bg-blue-400/30 px-3 py-1 rounded-full text-xs">Mô hình hiện đại</span>
+                </div>
+                <div class="p-6 flex-grow flex flex-col items-center">
+                    <canvas id="canvasModern" width="300" height="300" class="max-w-full h-auto cursor-help"></canvas>
+                    <div id="labelModern" class="mt-4 text-sm text-slate-500 text-center animate-fade-in">
+                        <p><strong>Đám mây electron:</strong> Vùng không gian xung quanh hạt nhân mà tại đó xác suất tìm thấy electron là lớn nhất.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Model B: Planetary -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200 flex flex-col">
+                <div class="bg-slate-700 p-4 text-white flex justify-between items-center">
+                    <h2 class="font-bold">Hình (b)</h2>
+                    <span class="bg-slate-500/30 px-3 py-1 rounded-full text-xs">Mô hình hành tinh</span>
+                </div>
+                <div class="p-6 flex-grow flex flex-col items-center">
+                    <canvas id="canvasPlanetary" width="300" height="300" class="max-w-full h-auto cursor-help"></canvas>
+                    <div id="labelPlanetary" class="mt-4 text-sm text-slate-500 text-center animate-fade-in">
+                        <p><strong>Quỹ đạo xác định:</strong> Electron chuyển động trên những đường tròn, elip xung quanh hạt nhân.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="md:col-span-2 flex flex-wrap justify-center gap-4 py-4">
+                <button id="btnTogglePlay" class="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-lg">
+                    <i data-lucide="pause" size="18"></i> <span>Tạm dừng</span>
+                </button>
+                <button id="btnToggleLabels" class="flex items-center gap-2 px-6 py-2 bg-white border border-slate-300 rounded-full hover:bg-slate-50 transition-colors shadow-sm">
+                    <i data-lucide="info" size="18"></i> <span>Ẩn chú thích</span>
+                </button>
+            </div>
+
+            <!-- Interaction Question -->
+            <div class="md:col-span-2 bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-r-xl shadow-inner mt-4">
+                <div class="flex items-start gap-3">
+                    <i data-lucide="help-circle" class="text-yellow-600 mt-1"></i>
+                    <div>
+                        <h3 class="font-bold text-lg text-yellow-900 mb-2">Thử thách kiến thức:</h3>
+                        <p class="text-slate-700 mb-4">Dựa vào hình ảnh mô phỏng trên, theo em mô hình nào thể hiện đúng bản chất <strong>hiện đại</strong> của nguyên tử?</p>
+                        
+                        <div id="quizOptions" class="flex gap-4">
+                            <button onclick="handleAnswer('a')" class="px-4 py-2 bg-white border border-yellow-300 rounded-lg hover:bg-yellow-100 transition-colors">Hình (a)</button>
+                            <button onclick="handleAnswer('b')" class="px-4 py-2 bg-white border border-yellow-300 rounded-lg hover:bg-yellow-100 transition-colors">Hình (b)</button>
+                        </div>
+                        
+                        <div id="quizFeedback" class="hidden animate-fade-in">
+                            <p id="feedbackText" class="font-semibold"></p>
+                            <button onclick="resetQuiz()" class="mt-2 text-sm text-blue-600 underline flex items-center gap-1">
+                                <i data-lucide="refresh-cw" size="14"></i> Thử lại
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="md:col-span-2 bg-white rounded-xl shadow-md p-6 border border-slate-100">
+                <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="info" class="text-blue-500"></i> Điểm khác biệt chính
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50">
+                                <th class="p-3 border-b-2 border-slate-200">Đặc điểm</th>
+                                <th class="p-3 border-b-2 border-slate-200">Mô hình Hành tinh (b)</th>
+                                <th class="p-3 border-b-2 border-slate-200">Mô hình Hiện đại (a)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="p-3 border-b font-medium">Chuyển động của electron</td>
+                                <td class="p-3 border-b text-slate-600">Theo quỹ đạo tròn, eleip xác định</td>
+                                <td class="p-3 border-b text-slate-600">Nhanh, không theo quỹ đạo xác định</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 border-b font-medium">Vị trí electron</td>
+                                <td class="p-3 border-b text-slate-600">Luôn nằm trên các đường tròn</td>
+                                <td class="p-3 border-b text-slate-600">Được xác định bằng xác suất (đám mây)</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 border-b font-medium">Cấu tạo hạt nhân</td>
+                                <td class="p-3 border-b text-slate-600" colspan="2">Giống nhau: Tập trung ở tâm, chứa Proton (+) và Neutron (0)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-12 text-center text-slate-400 text-sm pb-8">
+            Mô phỏng dựa trên kiến thức Hóa học 10 & 11 • © 2024 Khoa học trực quan
+        </footer>
+    </div>
+
+    <script>
+        // State Management
+        let isPlaying = true;
+        let showLabels = true;
+        let requestRef;
+
+        const canvasP = document.getElementById('canvasPlanetary');
+        const canvasM = document.getElementById('canvasModern');
+        const ctxP = canvasP.getContext('2d');
+        const ctxM = canvasM.getContext('2d');
+
+        // Nucleus Data
+        const nucleusParticles = [
+            { x: 0, y: -4, color: '#ef4444' },
+            { x: 4, y: 2, color: '#ef4444' },
+            { x: -4, y: 2, color: '#22c55e' },
+            { x: 0, y: 6, color: '#22c55e' },
+        ];
+
+        function drawNucleus(ctx, centerX, centerY, scale = 1) {
+            nucleusParticles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(centerX + p.x * scale, centerY + p.y * scale, 6 * scale, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.closePath();
+            });
+        }
+
+        function animate(time) {
+            if (!isPlaying) return;
+
+            const angle = time * 0.002;
+            const cx = 150;
+            const cy = 150;
+
+            // --- Planetary Model ---
+            ctxP.clearRect(0, 0, 300, 300);
+            const radius = 60;
+            ctxP.beginPath();
+            ctxP.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctxP.strokeStyle = '#cbd5e1';
+            ctxP.setLineDash([5, 5]);
+            ctxP.stroke();
+            ctxP.setLineDash([]);
+            drawNucleus(ctxP, cx, cy);
+
+            const drawElectron = (a) => {
+                const ex = cx + Math.cos(a) * radius;
+                const ey = cy + Math.sin(a) * radius;
+                ctxP.beginPath();
+                ctxP.arc(ex, ey, 5, 0, Math.PI * 2);
+                ctxP.fillStyle = '#3b82f6';
+                ctxP.fill();
+                ctxP.stroke();
+            };
+            drawElectron(angle);
+            drawElectron(angle + Math.PI);
+
+            // --- Modern Model ---
+            ctxM.clearRect(0, 0, 300, 300);
+            const gradient = ctxM.createRadialGradient(cx, cy, 5, cx, cy, 100);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
+            gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.15)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+            ctxM.beginPath();
+            ctxM.arc(cx, cy, 100, 0, Math.PI * 2);
+            ctxM.fillStyle = gradient;
+            ctxM.fill();
+
+            for(let i=0; i<15; i++) {
+                const r = Math.pow(Math.random(), 0.5) * 80;
+                const a = Math.random() * Math.PI * 2;
+                const dx = cx + Math.cos(a) * r;
+                const dy = cy + Math.sin(a) * r;
+                ctxM.beginPath();
+                ctxM.arc(dx, dy, 1.5, 0, Math.PI * 2);
+                ctxM.fillStyle = 'rgba(59, 130, 246, 0.6)';
+                ctxM.fill();
+            }
+            drawNucleus(ctxM, cx, cy);
+
+            requestRef = requestAnimationFrame(animate);
+        }
+
+        // Event Listeners
+        document.getElementById('btnTogglePlay').addEventListener('click', function() {
+            isPlaying = !isPlaying;
+            const btn = this;
+            const span = btn.querySelector('base-span, span');
+            if (isPlaying) {
+                span.innerText = "Tạm dừng";
+                btn.innerHTML = `<i data-lucide="pause" size="18"></i> <span>Tạm dừng</span>`;
+                requestRef = requestAnimationFrame(animate);
+            } else {
+                span.innerText = "Tiếp tục";
+                btn.innerHTML = `<i data-lucide="play" size="18"></i> <span>Tiếp tục</span>`;
+                cancelAnimationFrame(requestRef);
+            }
+            lucide.createIcons();
+        });
+
+        document.getElementById('btnToggleLabels').addEventListener('click', function() {
+            showLabels = !showLabels;
+            document.getElementById('labelModern').classList.toggle('hidden', !showLabels);
+            document.getElementById('labelPlanetary').classList.toggle('hidden', !showLabels);
+            this.querySelector('span').innerText = showLabels ? "Ẩn chú thích" : "Hiện chú thích";
+        });
+
+        // Quiz Logic
+        window.handleAnswer = function(choice) {
+            document.getElementById('quizOptions').classList.add('hidden');
+            const feedback = document.getElementById('quizFeedback');
+            const text = document.getElementById('feedbackText');
+            feedback.classList.remove('hidden');
+
+            if (choice === 'a') {
+                text.innerText = "Chính xác! Hình (a) là mô hình hiện đại (đám mây electron).";
+                text.className = "font-semibold text-green-600";
+            } else {
+                text.innerText = "Gần đúng rồi, hãy nhớ rằng mô hình (b) có quỹ đạo tròn xác định giống như quỹ đạo các hành tinh.";
+                text.className = "font-semibold text-amber-600";
+            }
+        };
+
+        window.resetQuiz = function() {
+            document.getElementById('quizOptions').classList.remove('hidden');
+            document.getElementById('quizFeedback').classList.add('hidden');
+        };
+
+        // Initialize
+        window.onload = () => {
+            lucide.createIcons();
+            requestRef = requestAnimationFrame(animate);
+        };
+    </script>
+</body>
+</html>
